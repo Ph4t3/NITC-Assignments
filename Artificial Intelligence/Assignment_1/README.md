@@ -13,10 +13,10 @@ The codes are written in Java and can be normally compiled
 - For each time Suck() is called, the performanceMeasure is increased.
 
 #### Sample Output 1
-![Screenshot 1](/Q1/ss1.png)
+![Screenshot 1](https://raw.githubusercontent.com/Ph4t3/NITC-Assignments/master/Artificial%20Intelligence/Assignment_1/Q1/ss1.png)
 
 #### State  Space Search Graph
-![State Space Graph](/Q1/StateSpaceSearchGraph.png)
+![State Space Graph](https://raw.githubusercontent.com/Ph4t3/NITC-Assignments/master/Artificial%20Intelligence/Assignment_1/Q1/StateSpaceSearchGraph.png)
 
 ## Question 2
 
@@ -29,8 +29,8 @@ The codes are written in Java and can be normally compiled
 - This is continued until end state is reached, and the winner is declared.
 
 #### Sample Output 1
-![Screenshot 1](/Q2/ss1.png)
+![Screenshot 1](https://raw.githubusercontent.com/Ph4t3/NITC-Assignments/master/Artificial%20Intelligence/Assignment_1/Q2/ss1.png)
 
 #### Sample Output 2
-![Screenshot 2](/Q2/ss2.png)
+![Screenshot 2](https://raw.githubusercontent.com/Ph4t3/NITC-Assignments/master/Artificial%20Intelligence/Assignment_1/Q2/ss2.png)
 
