@@ -12,75 +12,94 @@
 #include <unistd.h>
 
 #define MAX 100
-#define PORT 8080
+#define PORT 1235
 #define BACKLOG 5
-#define COUNT 100
+#define SIZE 500
 
-char* randstring(size_t length)
+typedef struct Packet {
+    int size;
+    int seq_no;
+    int ack_no;
+    char data[SIZE];
+} Packet;
+Packet* packet;
+
+char* randstring(size_t sizegth)
 {
     static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
     char* randomString = NULL;
 
-    if (length) {
-        randomString = malloc(sizeof(char) * (length + 1));
+    if (sizegth) {
+        randomString = malloc(sizeof(char) * (sizegth + 1));
 
         if (randomString) {
-            for (int n = 0; n < length; n++) {
+            for (int n = 0; n < sizegth; n++) {
                 int key = rand() % (int)(sizeof(charset) - 1);
                 randomString[n] = charset[key];
             }
-            randomString[length] = '\0';
+            randomString[sizegth] = '\0';
         }
     }
 
     return randomString;
 }
 
-// Function designed for chat between client and server.
-void chatHandler(int connfd)
+void send_file(int sockfd)
 {
-    char buff[MAX], *fruit;
-    int count, index, ret;
+    int count, recv_size;
+    FILE* fp = fopen("myfile.bin", "rb");
+    int curr_seq_no = 0;
 
-    // infinite loop for chat
     while (1) {
-        bzero(buff, MAX);
-        recv(connfd, buff, MAX, 0); // Read message from client
-        printf("%s \n", buff);
+        memset(packet, 0, sizeof(Packet));
+        count = fread(packet->data, sizeof(char), SIZE, fp);
+        packet->seq_no = curr_seq_no;
+        packet->size = count;
 
-        if (!strcmp(buff, "GivemeyourVideo")) {
-            strcpy(buff, "Enter the name of the fruit:");
-        } else if (strcmp("Bye", buff) == 0) {
-            printf("Client Exit...\n");
-            break;
-        } else {
-            bzero(buff, MAX);
-            strcpy(buff, randstring(20));
+        if (send(sockfd, packet, sizeof(*packet), 0) == -1) {
+            perror("[-]Error in sending file.");
+            exit(1);
         }
 
-        send(connfd, buff, strlen(buff), 0);
+        memset(packet, 0, sizeof(Packet));
+        recv_size = recv(sockfd, packet, sizeof(Packet), 0);
+
+        if (recv_size == -1 || packet->ack_no != curr_seq_no) {
+            perror("[-]Error: ACK Invalid");
+            fseek(fp, -SIZE, SEEK_CUR);
+        } else {
+            curr_seq_no++;
+        }
+
+        if (count == 0)
+            return;
     }
 }
 
-void sigchld_handler(int s)
+// Function designed for chat between client and server.
+void chatHandler(int connfd)
 {
-    // waitpid() might overwrite errno, so we save and restore it
-    int saved_errno = errno;
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        ;
-    errno = saved_errno;
-}
+    int count, index, ret;
+    packet = malloc(sizeof(Packet));
 
-// Function to reap zombie processes
-void reaper()
-{
-    struct sigaction sa;
-    sa.sa_handler = sigchld_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-        perror("sigaction");
-        exit(1);
+    // infinite loop for chat
+    while (1) {
+        memset(packet, 0, sizeof(Packet));
+        recv(connfd, packet, sizeof(Packet), 0); // Read message from client
+        printf("%s \n", packet->data);
+
+        if (!strcmp(packet->data, "GivemeyourVideo")) {
+            send_file(connfd);
+            /* strcpy(buff, "End Of File"); */
+            /* printf("File sent successfully...\n"); */
+        } else if (strcmp(packet->data, "Bye") == 0) {
+            printf("Client Exit...\n");
+            break;
+        } else {
+            memset(packet, 0, sizeof(Packet));
+            strcpy(packet->data, randstring(20));
+            send(connfd, packet, sizeof(Packet), 0);
+        }
     }
 }
 
@@ -128,25 +147,13 @@ int main()
     // Initialize Socket
     sockfd = init_socket();
 
-    // Reap all dead processes
-    reaper();
-
-    while (1) {
-        // Accept the data packet from client and verification
-        addr_size = sizeof(their_addr);
-        connfd = accept(sockfd, (struct sockaddr*)&their_addr, &addr_size);
-        if (connfd < 0) {
-            printf("ERR: Server accept failed.\n");
-            exit(0);
-        }
-
-        if (!fork()) {     // Child process
-            close(sockfd); // child doesn't need the listener
-            chatHandler(connfd);
-            close(connfd);
-            exit(0);
-        }
-
-        close(connfd);
+    addr_size = sizeof(their_addr);
+    connfd = accept(sockfd, (struct sockaddr*)&their_addr, &addr_size);
+    if (connfd < 0) {
+        printf("ERR: Server accept failed.\n");
+        exit(0);
     }
+
+    chatHandler(connfd);
+    close(connfd);
 }

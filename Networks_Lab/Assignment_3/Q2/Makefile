@@ -1,12 +1,16 @@
 CC=gcc
+CFLAGS=-g -lpthread
 
 default: tcpclient.o tcpserver.o
 
 tcpclient.o: tcpclient.c
-	$(CC) -o $@ $< 
+	$(CC) $(CFLAGS) -o $@ $< 
 
 tcpserver.o: tcpserver.c
-	$(CC) -o $@ $< 
+	$(CC) $(CFLAGS) -o $@ $< 
+
+graph:
+	gnuplot plot.plt
 
 clean: 
-	rm *.o
+	rm *.o outfile stats.dat

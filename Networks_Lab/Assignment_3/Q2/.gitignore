@@ -1,2 +1,4 @@
+myfile.bin
+outfile
 *.o
-myfile
+stats.dat
