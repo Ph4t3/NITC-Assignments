@@ -43,38 +43,21 @@ void func(int sockfd)
     int n, choice;
     while (1) {
         bzero(buff, sizeof(buff));
-        printf("1. Fruits\n");
-        printf("2. SendInventory\n");
-        printf("3. Exit\n");
-        printf("Enter Choice: ");
-        scanf("%d", &choice);
+        n = 0;
+        while ((buff[n++] = getchar()) != '\n')
+            ;
+        buff[n - 1] = '\0';
 
-        if (choice == 1) {
-            strcpy(buff, "Fruits");
-            send(sockfd, buff, strlen(buff), 0);
-
-            bzero(buff, sizeof(buff));
-            recv(sockfd, buff, sizeof(buff), 0);
-            printf("%s", buff);
-
-            n = 0;
-            bzero(buff, sizeof(buff));
-            scanf(" ");
-            while ((buff[n++] = getchar()) != '\n')
-                ;
-            send(sockfd, buff, strlen(buff), 0);
-        } else if (choice == 2) {
-            strcpy(buff, "SendInventory");
-            send(sockfd, buff, strlen(buff), 0);
-        } else {
-            strcpy(buff, "Exit");
-            send(sockfd, buff, strlen(buff), 0);
+        if (strcmp("Bye", buff) == 0) {
+            printf("Client Exit...\n");
             break;
         }
 
+        send(sockfd, buff, strlen(buff), 0);
+
         bzero(buff, sizeof(buff));
         recv(sockfd, buff, sizeof(buff), 0);
-        printf("%s\n", buff);
+        printf("Server: %s\n", buff);
     }
 }
 

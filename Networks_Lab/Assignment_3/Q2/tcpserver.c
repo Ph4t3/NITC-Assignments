@@ -16,46 +16,28 @@
 #define BACKLOG 5
 #define COUNT 100
 
-struct {
-    char* name;
-    int count;
-} fruits[] = {
-    { "apple", COUNT },
-    { "mango", COUNT },
-    { "banana", COUNT },
-    { "chikoo", COUNT },
-    { "papaya", COUNT }
-};
-
-int fruit2index(char* name)
+char* randstring(size_t length)
 {
-    for (int i = 0; i < sizeof(fruits) / sizeof(fruits[0]); i++) {
-        if (!strcmp(name, fruits[i].name))
-            return i;
-    }
-    return -1;
-}
+    static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
+    char* randomString = NULL;
 
-char* fruit2str()
-{
-    char* output = (char*)malloc(sizeof(char) * MAX);
-    strcpy(output, "");
+    if (length) {
+        randomString = malloc(sizeof(char) * (length + 1));
 
-    for (int i = 0; i < sizeof(fruits) / sizeof(fruits[0]); i++) {
-        char temp[MAX];
-        sprintf(temp, "%s : %d\n", fruits[i].name, fruits[i].count);
-        strcat(output, temp);
+        if (randomString) {
+            for (int n = 0; n < length; n++) {
+                int key = rand() % (int)(sizeof(charset) - 1);
+                randomString[n] = charset[key];
+            }
+            randomString[length] = '\0';
+        }
     }
 
-    return output;
-}
-
-void decrementFruitCount(int connfd)
-{
+    return randomString;
 }
 
 // Function designed for chat between client and server.
-void fruitsHandler(int connfd)
+void chatHandler(int connfd)
 {
     char buff[MAX], *fruit;
     int count, index, ret;
@@ -66,36 +48,14 @@ void fruitsHandler(int connfd)
         recv(connfd, buff, MAX, 0); // Read message from client
         printf("%s \n", buff);
 
-        if (!strcmp(buff, "Fruits")) {
+        if (!strcmp(buff, "GivemeyourVideo")) {
             strcpy(buff, "Enter the name of the fruit:");
-            send(connfd, buff, strlen(buff), 0);
-
-            bzero(buff, MAX);
-            recv(connfd, buff, MAX, 0); // Read message from client
-            fruit = strtok(buff, " ");
-            sscanf(strtok(NULL, " "), "%d", &count);
-            printf("%s %d\n", fruit, count);
-
-            index = fruit2index(fruit);
-            if (index == -1 || count > fruits[index].count) {
-                bzero(buff, MAX);
-                strcpy(buff, "Not Available\n");
-                printf("%s\n", buff);
-            } else {
-                fruits[index].count -= count;
-                bzero(buff, MAX);
-                strcpy(buff, "Success\n");
-                printf("%s\n", buff);
-            }
-        } else if (!strcmp(buff, "SendInventory")) {
-            bzero(buff, MAX);
-            strcpy(buff, fruit2str());
-        } else if (strncmp("Exit", buff, 4) == 0) {
+        } else if (strcmp("Bye", buff) == 0) {
             printf("Client Exit...\n");
             break;
         } else {
             bzero(buff, MAX);
-            strcpy(buff, "Not Available\n");
+            strcpy(buff, randstring(20));
         }
 
         send(connfd, buff, strlen(buff), 0);
@@ -182,7 +142,7 @@ int main()
 
         if (!fork()) {     // Child process
             close(sockfd); // child doesn't need the listener
-            fruitsHandler(connfd);
+            chatHandler(connfd);
             close(connfd);
             exit(0);
         }
