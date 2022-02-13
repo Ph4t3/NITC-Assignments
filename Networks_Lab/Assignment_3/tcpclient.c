@@ -53,6 +53,7 @@ void func(int sockfd)
             strcpy(buff, "Fruits");
             send(sockfd, buff, strlen(buff), 0);
 
+            bzero(buff, sizeof(buff));
             recv(sockfd, buff, sizeof(buff), 0);
             printf("%s", buff);
 
@@ -71,6 +72,7 @@ void func(int sockfd)
             break;
         }
 
+        bzero(buff, sizeof(buff));
         recv(sockfd, buff, sizeof(buff), 0);
         printf("%s\n", buff);
     }

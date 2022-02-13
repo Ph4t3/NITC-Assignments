@@ -74,22 +74,28 @@ void fruitsHandler(int connfd)
             recv(connfd, buff, MAX, 0); // Read message from client
             fruit = strtok(buff, " ");
             sscanf(strtok(NULL, " "), "%d", &count);
-            printf("%d", count);
+            printf("%s %d\n", fruit, count);
 
             index = fruit2index(fruit);
             if (index == -1 || count > fruits[index].count) {
-                strcpy(buff, "Not Available");
+                bzero(buff, MAX);
+                strcpy(buff, "Not Available\n");
+                printf("%s\n", buff);
             } else {
                 fruits[index].count -= count;
-                strcpy(buff, "Success ");
+                bzero(buff, MAX);
+                strcpy(buff, "Success\n");
+                printf("%s\n", buff);
             }
         } else if (!strcmp(buff, "SendInventory")) {
+            bzero(buff, MAX);
             strcpy(buff, fruit2str());
         } else if (strncmp("Exit", buff, 4) == 0) {
             printf("Client Exit...\n");
             break;
         } else {
-            strcpy(buff, "Not Available");
+            bzero(buff, MAX);
+            strcpy(buff, "Not Available\n");
         }
 
         send(connfd, buff, strlen(buff), 0);
