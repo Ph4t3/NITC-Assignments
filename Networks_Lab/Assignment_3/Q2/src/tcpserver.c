@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #define MAX 100
@@ -56,6 +57,7 @@ void send_file(int sockfd)
         packet->seq_no = curr_seq_no;
         packet->size = count;
 
+        clock_t begin = clock();
         if (send(sockfd, packet, sizeof(*packet), 0) == -1) {
             perror("[-]Error in sending file.");
             exit(1);
@@ -64,10 +66,14 @@ void send_file(int sockfd)
         memset(packet, 0, sizeof(Packet));
         recv_size = recv(sockfd, packet, sizeof(Packet), 0);
 
+        clock_t end = clock();
+        double RTT = (double)(end - begin) / CLOCKS_PER_SEC;
         if (recv_size == -1 || packet->ack_no != curr_seq_no) {
             perror("[-]Error: ACK Invalid");
             fseek(fp, -SIZE, SEEK_CUR);
         } else {
+            printf("\rRound Trip Time (RTT) = %lfs", RTT);
+            fflush(stdout);
             curr_seq_no++;
         }
 
@@ -86,12 +92,11 @@ void chatHandler(int connfd)
     while (1) {
         memset(packet, 0, sizeof(Packet));
         recv(connfd, packet, sizeof(Packet), 0); // Read message from client
-        printf("%s \n", packet->data);
+        printf("Client: %s \n", packet->data);
 
         if (!strcmp(packet->data, "GivemeyourVideo")) {
             send_file(connfd);
-            /* strcpy(buff, "End Of File"); */
-            /* printf("File sent successfully...\n"); */
+            printf("\nFile sent successfully...\n");
         } else if (strcmp(packet->data, "Bye") == 0) {
             printf("Client Exit...\n");
             break;
