@@ -3,15 +3,15 @@
 ## Artificial Intelligence
 
 -   Assignment 1
-    -   [Simple Reflex Agent for Vaccum Cleaner Environment](./Artificial Intelligence/Assignment_1/Q1)
-    -   [Game Agent based on MiniMax Algorithm](./Artificial Intelligence/Assignment_1/Q2)
+    -   [Simple Reflex Agent for Vaccum Cleaner Environment](<./Artificial\ Intelligence/Assignment_1/Q1>)
+    -   [Game Agent based on MiniMax Algorithm](<./Artificial\ Intelligence/Assignment_1/Q2>)
 -   Assignment 2
-    -   [CNN for Handwritten Digit classification](./Artificial Intelligence/Assignment_2/Q1)
-    -   [ANN without Convolution Layers](./Artificial Intelligence/Assignment_2/Q4)
+    -   [CNN for Handwritten Digit classification](<./Artificial\ Intelligence/Assignment_2/Q1>)
+    -   [ANN without Convolution Layers](<./Artificial\ Intelligence/Assignment_2/Q4>)
 
 ## Machine Learning
 
--   [Assignment 1](./Machine Learning/Assignment_1)
+-   [Assignment 1](<./Machine\ Learning/Assignment_1>)
 
 ## Networks Lab
 
