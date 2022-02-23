@@ -59,10 +59,7 @@ RoutingTable** DVR(Link* links, int n, int m)
 
                     if (greaterThan(table[i][dest].cost, connected_cost)) {
                         table[i][dest].cost = connected_cost;
-                        table[i][dest].next_hop = next_hop;
-
-                        if (src == i)
-                            table[i][dest].next_hop = dest;
+                        table[i][dest].next_hop = src == i ? dest : next_hop;
                     }
                 }
             }
