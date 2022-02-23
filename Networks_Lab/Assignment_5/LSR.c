@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -40,6 +41,15 @@ void addNodeToPath(struct NodeList** path, int node)
     }
 }
 
+void copyPath(struct NodeList* from, struct NodeList** to)
+{
+    *to = NULL;
+    while (from != NULL) {
+        addNodeToPath(to, from->node);
+        from = from->next_node;
+    }
+}
+
 RoutingTable** initTable(int n)
 {
     RoutingTable** table = malloc(sizeof(RoutingTable*) * n);
@@ -51,7 +61,7 @@ RoutingTable** initTable(int n)
             table[i][j].path = NULL;
             if (i == j) {
                 table[i][j].cost = 0;
-                addNodeToPath(&table[i][j].path, i + 1);
+                addNodeToPath(&table[i][j].path, i);
             } else {
                 table[i][j].cost = INT_MAX;
             }
@@ -70,9 +80,47 @@ void addLink(Link** network, int src, int dest, int cost)
     network[src] = link;
 }
 
+int minCost(RoutingTable table[], bool processed[], int n)
+{
+    int min = INT_MAX, min_idx;
+    for (int i = 0; i < n; i++) {
+        if (!processed[i] && min > table[i].cost) {
+            min = table[i].cost;
+            min_idx = i;
+        }
+    }
+    return min_idx;
+}
+
 RoutingTable** LSR(Network* network)
 {
-    RoutingTable** table = initTable(network->nodes);
+    int n = network->nodes;
+    RoutingTable** table = initTable(n);
+
+    // For All Nodes
+    for (int i = 0; i < n; i++) {
+        bool processed[n];
+        for (int j = 0; j < n; j++)
+            processed[j] = false;
+
+        // Apply Dijkstra's
+        for (int j = 0; j < n - 1; j++) {
+            int u = minCost(table[i], processed, n);
+            processed[u] = true;
+
+            Link* head = network->links[u];
+            while (head != NULL) {
+                if (table[i][u].cost != INT_MAX && table[i][u].cost + head->cost < table[i][head->dest].cost) {
+                    table[i][head->dest].cost = head->cost + table[i][u].cost;
+                    if (i != u)
+                        copyPath(table[i][u].path, &table[i][head->dest].path);
+                    addNodeToPath(&table[i][head->dest].path, head->dest);
+                }
+                head = head->next_link;
+            }
+        }
+    }
+
     return table;
 }
 
@@ -98,6 +146,10 @@ Network* readInput()
         else if (cost < 0)
             printf("Invalid Cost...\n");
         else {
+            // Zero based indexing
+            src -= 1;
+            dest -= 1;
+
             addLink(network->links, src, dest, cost);
             addLink(network->links, dest, src, cost);
             i++;
@@ -105,6 +157,18 @@ Network* readInput()
     }
 
     return network;
+}
+
+void printNetwork(Network* network)
+{
+    for (int i = 0; i < network->nodes; i++) {
+        printf("\nLinks of Node %d\n\n", i + 1);
+        Link* head = network->links[i];
+        while (head != NULL) {
+            printf("%d->%d\t%d\n", i + 1, head->dest + 1, head->cost);
+            head = head->next_link;
+        }
+    }
 }
 
 void printTableRow(RoutingTable row, int start)
@@ -116,7 +180,7 @@ void printTableRow(RoutingTable row, int start)
         printf("%d", start);
 
     while (path != NULL) {
-        printf("->%d", path->node);
+        printf("->%d", path->node + 1);
         path = path->next_node;
     }
 
@@ -139,6 +203,7 @@ void printRoutingTable(RoutingTable** table, int n)
 int main()
 {
     Network* network = readInput();
+    /* printNetwork(network); */
     RoutingTable** table = LSR(network);
     printRoutingTable(table, network->nodes);
     return 0;
