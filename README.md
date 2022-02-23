@@ -25,3 +25,6 @@
 -   Assignment 4
     -   [Simple Chat application using sockets](./Networks_Lab/Assignment_4/Q1)
     -   [Concurrent Calculator Server using sockets](./Networks_Lab/Assignment_4/Q2)
+-   Assignment 5
+    -   [Distance Vector Routing](./Networks_Lab/Assignment_5)
+    -   [Link State Routing](./Networks_Lab/Assignment_5)
