@@ -9,6 +9,7 @@ typedef struct RoutingTable {
     int next_hop, cost;
 } RoutingTable;
 
+
 // Returns a table with default values
 // -1 = inf
 RoutingTable** initTable(int n)
