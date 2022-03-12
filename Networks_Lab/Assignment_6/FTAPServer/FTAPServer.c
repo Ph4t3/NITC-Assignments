@@ -58,31 +58,13 @@ Users* findUser(char* username) {
     return NULL;
 }
 
-char* randstring(size_t sizegth)
-{
-    static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
-    char* randomString = NULL;
-
-    if (sizegth) {
-        randomString = malloc(sizeof(char) * (sizegth + 1));
-
-        if (randomString) {
-            for (int n = 0; n < sizegth; n++) {
-                int key = rand() % (int)(sizeof(charset) - 1);
-                randomString[n] = charset[key];
-            }
-            randomString[sizegth] = '\0';
-        }
-    }
-
-    return randomString;
-}
-
-void send_file(int sockfd)
-{
+int send_file(int sockfd, char* filename) {
     int count, recv_size;
-    FILE* fp = fopen("myfile.bin", "rb");
+    FILE* fp = fopen(filename, "rb");
     int curr_seq_no = 0;
+
+    if(fp == NULL)
+        return 0;
 
     while (1) {
         memset(packet, 0, sizeof(Packet));
@@ -91,7 +73,7 @@ void send_file(int sockfd)
         packet->size = count;
 
         if (count == 0)
-            return;
+            return 1;
 
         clock_t begin = clock();
         if (send(sockfd, packet, sizeof(*packet), 0) == -1) {
@@ -118,12 +100,12 @@ void send_file(int sockfd)
 char* list_files() {
     DIR *dp;
     struct dirent *ep;
-    char *out = malloc(0);
+    char *out = calloc(0, 0);
     dp = opendir ("./");
 
     if (dp != NULL) {
         while ((ep = readdir (dp)) != NULL) {
-            out = realloc(out, strlen(out) + strlen(ep->d_name) + 1);
+            out = realloc(out, strlen(out) + strlen(ep->d_name) + 2);
             sprintf(out + strlen(out), "%s\n", ep->d_name);
         }
 
@@ -161,15 +143,20 @@ void ftp(int connfd)
         printf("Cmd: %s, Argument: %s\n", cmd, arg);
 
         if(authenticated) {
-            if (!strcmp(packet->data, "GivemeyourVideo")) {
-                send_file(connfd);
-                printf("\nFile sent successfully...\n");
+            if (strcmp(cmd, "GetFile") == 0) {
+                if(send_file(connfd, arg))
+                    strcpy(packet->data, "File Transferred Successfully.");
+                else
+                    strcpy(packet->data, "File Not Found.");
+            } else if (strcmp(cmd, "CreateFile") == 0) {
+                FILE *fp = fopen(arg, "w");
+                fclose(fp);
+                strcpy(packet->data, "File Created Successfully.");
             } else if (strcmp(cmd, "ListDir") == 0) {
                 strcpy(packet->data, list_files());
                 send(connfd, packet, sizeof(Packet), 0);
-                break;
             } else {
-                strcpy(packet->data, randstring(20));
+                strcpy(packet->data, "505: Command not supported");
                 send(connfd, packet, sizeof(Packet), 0);
             }
         } else {

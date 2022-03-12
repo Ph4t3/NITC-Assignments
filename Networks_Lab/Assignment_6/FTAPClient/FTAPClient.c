@@ -73,7 +73,7 @@ void send_file(int sockfd) {
 
 void recv_file(int sockfd)
 {
-    int recv_size, curr_seq_no = 0, flag = 0;
+    int recv_size, curr_seq_no = 0;
     FILE* fp;
     graph_ptr = fopen("stats.dat", "w");
     fp = fopen("outfile", "w");
@@ -81,20 +81,20 @@ void recv_file(int sockfd)
     pthread_t timer_t;
     pthread_create(&timer_t, NULL, timer_thread, NULL);
 
-    while (!flag) {
+    while (1) {
         memset(packet, 0, sizeof(Packet));
         recv_size = recv(sockfd, packet, sizeof(Packet), 0);
 
         if (recv_size > 0 && packet->seq_no == curr_seq_no) {
-            printf("%s\n", packet->data);
+            if (packet->size == 0) {
+                pthread_cancel(timer_t);
+                printf("%s\n", packet->data);
+                return;
+            }
+
             fwrite(packet->data, sizeof(char), packet->size, fp);
             curr_file_size += packet->size;
             curr_seq_no++;
-
-            if (packet->size < SIZE) {
-                pthread_cancel(timer_t);
-                flag = 1;
-            }
         }
 
         memset(packet, 0, sizeof(Packet));
