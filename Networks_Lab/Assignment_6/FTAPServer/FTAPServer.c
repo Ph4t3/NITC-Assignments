@@ -58,6 +58,35 @@ Users* findUser(char* username) {
     return NULL;
 }
 
+void recv_file(int sockfd, char* filename)
+{
+    int recv_size, curr_seq_no = 0;
+    FILE* fp = fopen(filename, "w");
+
+    while (1) {
+        memset(packet, 0, sizeof(Packet));
+        recv_size = recv(sockfd, packet, sizeof(Packet), 0);
+
+        if (recv_size > 0 && packet->seq_no == curr_seq_no) {
+            if (packet->size == 0)
+                break;
+
+            fwrite(packet->data, sizeof(char), packet->size, fp);
+            curr_seq_no++;
+        }
+
+        memset(packet, 0, sizeof(Packet));
+        packet->ack_no = curr_seq_no - 1;
+
+        if (send(sockfd, packet, sizeof(*packet), 0) == -1) {
+            perror("[-]Error in sending file.");
+            exit(1);
+        }
+    }
+
+    fclose(fp);
+}
+
 int send_file(int sockfd, char* filename) {
     int count, recv_size;
     FILE* fp = fopen(filename, "rb");
@@ -148,16 +177,17 @@ void ftp(int connfd)
                     strcpy(packet->data, "File Transferred Successfully.");
                 else
                     strcpy(packet->data, "File Not Found.");
+            } else if (strcmp(cmd, "StoreFile") == 0) {
+                recv_file(connfd, arg);
+                strcpy(packet->data, "File Transferred Successfully.");
             } else if (strcmp(cmd, "CreateFile") == 0) {
                 FILE *fp = fopen(arg, "w");
                 fclose(fp);
                 strcpy(packet->data, "File Created Successfully.");
             } else if (strcmp(cmd, "ListDir") == 0) {
                 strcpy(packet->data, list_files());
-                send(connfd, packet, sizeof(Packet), 0);
             } else {
                 strcpy(packet->data, "505: Command not supported");
-                send(connfd, packet, sizeof(Packet), 0);
             }
         } else {
             if (strcmp("USERN", cmd) == 0) {
@@ -176,9 +206,8 @@ void ftp(int connfd)
             } else {
                 strcpy(packet->data, "505: Command not supported");
             }
-
-            send(connfd, packet, sizeof(Packet), 0);
         }
+        send(connfd, packet, sizeof(Packet), 0);
     }
 }
 
