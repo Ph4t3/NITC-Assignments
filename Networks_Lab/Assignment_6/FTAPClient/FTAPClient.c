@@ -17,10 +17,12 @@ typedef struct Packet {
     int seq_no;
     int ack_no;
     char data[SIZE];
+    int total_data;
 } Packet;
 
 Packet* packet;
 int curr_file_size = 0;
+int total_file_size = 0;
 
 int connect_socket()
 {
@@ -60,7 +62,7 @@ void* timer_thread()
         prev_file_size = curr_file_size;
         elapsed_time += 0.1; // In Seconds
         fflush(stdout);
-        printf("\rTransmission rate = %d KB/s ", speed / 1024);
+        printf("\rTime Remaining = %f sec", (float)(total_file_size - curr_file_size)/speed);
         usleep(100000);
     }
 }
@@ -74,6 +76,11 @@ int send_file(int sockfd, char* filename) {
     if(fp == NULL)
         return 0;
 
+    // Find the file size
+    fseek(fp, 0L, SEEK_END);
+    total_file_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
     pthread_t timer_t;
     curr_file_size = 0;
     pthread_create(&timer_t, NULL, timer_thread, NULL);
@@ -83,6 +90,7 @@ int send_file(int sockfd, char* filename) {
         count = fread(packet->data, sizeof(char), SIZE, fp);
         packet->seq_no = curr_seq_no;
         packet->size = count;
+        packet->total_data = total_file_size;
 
         if (count == 0) {
             pthread_cancel(timer_t);
@@ -129,6 +137,7 @@ void recv_file(int sockfd, char* filename)
 
             fwrite(packet->data, sizeof(char), packet->size, fp);
             curr_file_size += packet->size;
+            total_file_size = packet->total_data;
             curr_seq_no++;
         }
 

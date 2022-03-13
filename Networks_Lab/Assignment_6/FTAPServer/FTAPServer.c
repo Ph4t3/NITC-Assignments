@@ -23,6 +23,7 @@ typedef struct Packet {
     int seq_no;
     int ack_no;
     char data[SIZE];
+    int total_data;
 } Packet;
 Packet* packet;
 
@@ -95,11 +96,17 @@ int send_file(int sockfd, char* filename) {
     if(fp == NULL)
         return 0;
 
+    // Find the file size
+    fseek(fp, 0L, SEEK_END);
+    int total_file_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
     while (1) {
         memset(packet, 0, sizeof(Packet));
         count = fread(packet->data, sizeof(char), SIZE, fp);
         packet->seq_no = curr_seq_no;
         packet->size = count;
+        packet->total_data = total_file_size;
 
         if (count == 0)
             return 1;
